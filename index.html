@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SharikNama - Eid-ul-Adha Meat Distribution</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="ui-template" class="container">
+        <div class="logo-row">
+            <span class="logo-text">
+                <span class="eid-moon-bg" title="Eid Moon" aria-label="Eid Moon">
+                    <svg width="100%" height="100%" viewBox="0 0 60 60" fill="none" style="transform: rotate(23deg);" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M55 30c0 13.807-11.193 25-25 25a25 25 0 0 1 0-50c1.1 0 2.18.07 3.24.21A20 20 0 1 0 55 30z" fill="#f7c873"/>
+                        <path d="M48 20c-2.5 6-8 10-14 10 2.5-2 4-5 4-8 0-3-1.5-6-4-8 6 0 11.5 4 14 10z" fill="#fffbe7"/>
+                    </svg>
+                </span>
+                <span class="logo-main">SharikNama</span>
+            </span>
+        </div>
+        <p class="subtitle">Eid-ul-Adha Meat Distribution Tracker</p>
+        <span class="shares-print" id="sharesPrint"></span>
+        <div class="offline-toggle-row">
+            <input type="checkbox" id="offlineSlider" class="offline-slider-checkbox" />
+            <label for="offlineSlider" class="offline-slider-label">
+                <span class="offline-slider-inner"></span>
+                <span class="offline-slider-switch"></span>
+                <span class="offline-slider-icon offline-slider-icon-left" title="Online" aria-label="Online">
+                    <!-- WiFi Off (striked) icon -->
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 7.5C6.5 4.5 13.5 4.5 17.5 7.5" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M5 10.5C7.5 8.5 12.5 8.5 15 10.5" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M8 13.5C9 12.5 11 12.5 12 13.5" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                        <circle cx="10" cy="16" r="1.2" fill="#22c55e"/>
+                        <line x1="3" y1="17" x2="17" y2="3" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="offline-slider-icon offline-slider-icon-right" title="Offline" aria-label="Offline">
+                    <!-- WiFi On icon -->
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 7.5C6.5 4.5 13.5 4.5 17.5 7.5" stroke="#b7791f" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M5 10.5C7.5 8.5 12.5 8.5 15 10.5" stroke="#b7791f" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M8 13.5C9 12.5 11 12.5 12 13.5" stroke="#b7791f" stroke-width="1.5" stroke-linecap="round"/>
+                        <circle cx="10" cy="16" r="1.2" fill="#b7791f"/>
+                    </svg>
+                </span>
+            </label>
+            <button class="info-btn" id="modeInfoBtn" aria-label="Mode Info" tabindex="0">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="10" r="9" stroke="#4299e1" stroke-width="2" fill="#e6f0fa"/>
+                    <rect x="9" y="8" width="2" height="6" rx="1" fill="#4299e1"/>
+                    <rect x="9" y="5" width="2" height="2" rx="1" fill="#4299e1"/>
+                </svg>
+            </button>
+            <div class="info-tooltip" id="modeInfoTooltip" role="tooltip" style="display:none;"></div>
+        </div>
+        <div class="controls">
+            <label for="totalShares">Total Shares:</label>
+            <input type="number" id="totalShares" min="1" value="7">
+            <button id="clearData">Clear Saved Data</button>
+        </div>
+        <div class="table-section">
+            <table id="partsTable">
+                <thead>
+                    <tr>
+                        <th class="serial-col">#</th>
+                        <th>Part Name</th>
+                        <th>Total Amount (kg)</th>
+                        <th>Amount per Share (kg)</th>
+                        <th>Distributed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be dynamically added here -->
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td class="serial-col"></td>
+                        <td style="font-weight:bold;">Total</td>
+                        <td class="total-amount-cell" style="font-weight:bold;">0.00</td>
+                        <td class="total-pershare-cell" style="font-weight:bold;">0.00</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <button id="addRow">Add Part</button>
+        </div>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+    <div id="print-template" style="display:none;">
+        <div class="print-title-row" style="display:flex;align-items:center;justify-content:center;gap:0;">
+            <span class="eid-moon-bg" style="width:90px;height:90px;display:inline-flex;vertical-align:middle;margin-right:-1.1em;">
+                <svg width="100%" height="100%" viewBox="0 0 60 60" fill="none" style="transform: rotate(23deg);" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M55 30c0 13.807-11.193 25-25 25a25 25 0 0 1 0-50c1.1 0 2.18.07 3.24.21A20 20 0 1 0 55 30z" fill="#f7c873"/>
+                    <path d="M48 20c-2.5 6-8 10-14 10 2.5-2 4-5 4-8 0-3-1.5-6-4-8 6 0 11.5 4 14 10z" fill="#fffbe7"/>
+                </svg>
+            </span>
+            <span class="logo-main" style="font-family:'Segoe Script','Brush Script MT',cursive,'Segoe UI',Arial,sans-serif;font-size:2.5em;font-weight:bold;color:#b7791f;letter-spacing:2px;text-shadow:0 2px 8px #f7c87344,0 1px 0 #fffbe7;z-index:1;position:relative;margin-left:-0.8em;">
+                SharikNama <span style="font-size:0.8em;font-weight:bold;color:#b7791f;">- <span id="print-year"></span></span>
+            </span>
+        </div>
+        <div class="print-subtitle">Eid-ul-Adha Meat Distribution Tracker</div>
+        <div class="print-meta">Shares: <span id="print-shares"></span></div>
+        <table id="print-table" class="print-static-table">
+            <thead><tr>
+                <th>#</th><th>Part Name</th><th>Total Amount (kg)</th><th>Amount per Share (kg)</th>
+            </tr></thead>
+            <tbody>
+                <!-- Print rows will be inserted here -->
+            </tbody>
+            <tfoot>
+                <tr class="totals-row">
+                    <td></td><td>Total</td><td id="print-total-amount"></td><td id="print-total-pershare"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="print-footer-imgs">
+            <img src="img/cow.png" class="print-corner-img print-corner-img-left print-flip-horizontal" alt="Cow" />
+            <img src="img/goat.png" class="print-corner-img print-corner-img-right" alt="Goat" />
+        </div>
+    </div>
+    <div class="qurbani-art">
+        <!-- SVGs will be provided by the user and inserted here -->
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
