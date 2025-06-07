@@ -21,7 +21,8 @@ const STORAGE_KEY = 'shariknama_data_v1';
 // --- State ---
 let state = {
     totalShares: 7,
-    parts: [] // {name, totalAmount, perShare, tally}
+    parts: [], // {name, totalAmount, perShare, tally}
+    groups: [] // {id, name, partSerials: [serials]}
 };
 
 // --- Utility Functions ---
@@ -54,6 +55,7 @@ function renderTable() {
         nameInput.oninput = e => {
             part.name = nameInput.value;
             saveState();
+            renderGroups();
         };
         nameTd.appendChild(nameInput);
         fieldRefs.nameInput = nameInput;
@@ -165,6 +167,7 @@ function renderTable() {
             saveState();
             renderTable();
             updateTotalsRow();
+            renderGroups();
         };
         actionsTd.appendChild(delBtn);
         tr.appendChild(actionsTd);
@@ -294,7 +297,151 @@ function renderPrintTemplate() {
     });
     if (printTotalAmount) printTotalAmount.textContent = totalAmountSum.toFixed(2);
     if (printTotalPerShare) printTotalPerShare.textContent = perShareSum.toFixed(2);
+    // Remove any existing group cards before rendering
+    const printTemplate = document.getElementById('print-template');
+    let groupCardsDiv = printTemplate.querySelector('.group-print-cards');
+    if (groupCardsDiv) groupCardsDiv.remove();
+    // Render group cards after the table
+    if (state.groups && state.groups.length > 0) {
+        groupCardsDiv = document.createElement('div');
+        groupCardsDiv.className = 'group-print-cards';
+        state.groups.forEach(group => {
+            if (!group.partSerials.length) return;
+            // Gather parts in this group
+            const groupParts = group.partSerials.map(s => state.parts[s-1]).filter(Boolean);
+            if (!groupParts.length) return;
+            let totalAmount = 0, totalPerShare = 0;
+            groupParts.forEach(p => {
+                totalAmount += parseFloat(p.totalAmount) || 0;
+                totalPerShare += parseFloat(p.perShare) || 0;
+            });
+            const card = document.createElement('div');
+            card.className = 'group-print-card';
+            card.innerHTML = `<div class="group-print-title">${group.name}</div>`;
+            groupParts.forEach((p, idx) => {
+                card.innerHTML += `<div class="group-print-row">${p.name || 'Part'}: <b>${p.totalAmount || 0} kg</b> (${p.perShare || 0} per share)</div>`;
+            });
+            card.innerHTML += `<div class="group-print-total">Total: <b>${totalAmount.toFixed(2)} kg</b> (${totalPerShare.toFixed(2)} per share)</div>`;
+            groupCardsDiv.appendChild(card);
+        });
+        // Insert after the table
+        const printTable = printTemplate.querySelector('table');
+        if (printTable && printTable.nextSibling) {
+            printTemplate.insertBefore(groupCardsDiv, printTable.nextSibling);
+        } else {
+            printTemplate.appendChild(groupCardsDiv);
+        }
+    }
 }
+
+// --- Group Management ---
+const groupSection = document.getElementById('groupSection');
+const groupList = document.getElementById('groupList');
+const addGroupBtn = document.getElementById('addGroupBtn');
+
+function renderGroups() {
+    groupList.innerHTML = '';
+    state.groups.forEach((group, gIdx) => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'group-card';
+        // Group name (editable)
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = group.name;
+        nameInput.className = 'group-name-input';
+        nameInput.addEventListener('input', (e) => {
+            group.name = e.target.value;
+            saveState();
+        });
+        groupDiv.appendChild(nameInput);
+        // Dropdown for selecting parts
+        const selectDiv = document.createElement('div');
+        selectDiv.className = 'group-select-parts';
+        selectDiv.innerHTML = '<span style="font-size:0.95em;color:#805ad5;">Select Part:</span>';
+        // Build available options (not already selected in this group)
+        const availableParts = state.parts
+            .map((part, idx) => ({ serial: idx + 1, name: part.name || `Part ${idx + 1}` }))
+            .filter(p => !group.partSerials.includes(p.serial));
+        if (availableParts.length > 0) {
+            const select = document.createElement('select');
+            select.style.marginLeft = '0.7em';
+            select.style.fontSize = '1em';
+            select.innerHTML = '<option value="">-- Select --</option>' +
+                availableParts.map(p => `<option value="${p.serial}">${p.serial} - ${p.name}</option>`).join('');
+            select.onchange = () => {
+                const val = parseInt(select.value);
+                if (val && !group.partSerials.includes(val)) {
+                    group.partSerials.push(val);
+                    saveState();
+                    renderGroups();
+                }
+            };
+            selectDiv.appendChild(select);
+        } else {
+            const noParts = document.createElement('span');
+            noParts.textContent = ' (All parts selected)';
+            noParts.style.color = '#aaa';
+            selectDiv.appendChild(noParts);
+        }
+        // Selected parts list with cross button
+        const selectedList = document.createElement('div');
+        selectedList.style.display = 'inline-block';
+        selectedList.style.marginLeft = '1em';
+        selectedList.style.verticalAlign = 'middle';
+        group.partSerials.forEach(serial => {
+            const part = state.parts[serial - 1];
+            if (!part) return;
+            const tag = document.createElement('span');
+            tag.style.display = 'inline-flex';
+            tag.style.alignItems = 'center';
+            tag.style.background = '#e9d8fd';
+            tag.style.color = '#553c9a';
+            tag.style.borderRadius = '1em';
+            tag.style.padding = '0.15em 0.7em 0.15em 0.7em';
+            tag.style.marginRight = '0.5em';
+            tag.style.marginBottom = '0.2em';
+            tag.style.fontSize = '0.98em';
+            tag.style.fontWeight = 'bold';
+            tag.textContent = `${serial} - ${part.name || `Part ${serial}`}`;
+            // Cross button
+            const cross = document.createElement('button');
+            cross.textContent = '×';
+            cross.title = 'Remove from group';
+            cross.style.background = 'none';
+            cross.style.border = 'none';
+            cross.style.color = '#c53030';
+            cross.style.fontWeight = 'bold';
+            cross.style.fontSize = '1.1em';
+            cross.style.marginLeft = '0.3em';
+            cross.style.cursor = 'pointer';
+            cross.onclick = () => {
+                group.partSerials = group.partSerials.filter(s => s !== serial);
+                saveState();
+                renderGroups();
+            };
+            tag.appendChild(cross);
+            selectedList.appendChild(tag);
+        });
+        selectDiv.appendChild(selectedList);
+        groupDiv.appendChild(selectDiv);
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.className = 'group-del-btn';
+        delBtn.onclick = () => {
+            state.groups.splice(gIdx, 1);
+            saveState();
+            renderGroups();
+        };
+        groupDiv.appendChild(delBtn);
+        groupList.appendChild(groupDiv);
+    });
+}
+addGroupBtn.onclick = () => {
+    state.groups.push({ id: Date.now(), name: 'New Group', partSerials: [] });
+    saveState();
+    renderGroups();
+};
 
 // --- Event Listeners ---
 totalSharesInput.oninput = () => {
@@ -318,6 +465,7 @@ addRowBtn.onclick = () => {
     state.parts.push({ name: '', totalAmount: 0, perShare: 0, tally: 0 });
     renderTable();
     saveState();
+    renderGroups();
 };
 clearDataBtn.onclick = () => {
     if (confirm('Are you sure you want to clear all saved data?')) {
@@ -325,7 +473,6 @@ clearDataBtn.onclick = () => {
         state = { totalShares: 7, parts: [] };
         totalSharesInput.value = 7;
         renderTable();
-        renderPrintTemplate();
     }
 };
 
@@ -438,6 +585,6 @@ function init() {
     updatePerShareAll();
     renderTable();
     updateSharesPrint();
-    renderPrintTemplate();
+    renderGroups();
 }
 init();
